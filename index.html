@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CPU Interactive Web Page</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: #ffffff;
+            color: #333333;
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .container {
+            max-width: 1000px;
+            width: 100%;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            border-bottom: 1px solid #cccccc;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: #2c3e50;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+        
+        .simulator {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .panel {
+            background: #2c3e50;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border: 1px solid #34495e;
+            border-radius: 0;
+        }
+        
+        .panel-title {
+            font-size: 1.4rem;
+            margin-bottom: 15px;
+            color: #ecf0f1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .memory-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+        }
+        
+        .memory-cell {
+            background: #34495e;
+            padding: 12px 8px;
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 1px solid #2c3e50;
+            border-radius: 0;
+        }
+        
+        .memory-cell.active {
+            background: #3498db;
+            transform: scale(1.05);
+            box-shadow: 0 0 10px rgba(52, 152, 219, 0.5);
+        }
+        
+        .memory-address {
+            font-size: 0.8rem;
+            color: #bdc3c7;
+            margin-bottom: 5px;
+        }
+        
+        .memory-value {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #ecf0f1;
+        }
+        
+        .cpu-components {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .registers {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        
+        .register {
+            flex: 1;
+            background: #34495e;
+            padding: 15px 10px;
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 1px solid #2c3e50;
+            border-radius: 0;
+        }
+        
+        .register.active {
+            background: #3498db;
+            transform: scale(1.05);
+            box-shadow: 0 0 10px rgba(52, 152, 219, 0.5);
+        }
+        
+        .register-label {
+            font-size: 0.9rem;
+            color: #bdc3c7;
+            margin-bottom: 8px;
+        }
+        
+        .register-value {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #ecf0f1;
+        }
+        
+        .cpu-unit {
+            background: #34495e;
+            padding: 15px;
+            text-align: center;
+            border: 1px solid #2c3e50;
+            border-radius: 0;
+        }
+        
+        .unit-label {
+            font-size: 0.9rem;
+            color: #bdc3c7;
+            margin-bottom: 8px;
+        }
+        
+        .unit-value {
+            font-size: 1.2rem;
+            font-weight: bold;
+            min-height: 24px;
+            color: #ecf0f1;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        button {
+            background: #3498db;
+            color: #ffffff;
+            border: none;
+            padding: 12px 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border-radius: 0;
+        }
+        
+        button:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .status {
+            text-align: center;
+            margin-top: 20px;
+            padding: 15px;
+            background: #ecf0f1;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            border: 1px solid #bdc3c7;
+            border-radius: 0;
+        }
+        
+        .instructions {
+            margin-top: 30px;
+            background: #2c3e50;
+            padding: 20px;
+            border: 1px solid #34495e;
+            border-radius: 0;
+        }
+        
+        .instructions h3 {
+            color: #ecf0f1;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+        
+        .instruction-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+        }
+        
+        .instruction {
+            background: #34495e;
+            padding: 10px;
+            font-size: 0.9rem;
+            border: 1px solid #2c3e50;
+            border-radius: 0;
+            color: #ecf0f1;
+        }
+        
+        .instruction.active {
+            background: #3498db;
+            color: #ffffff;
+            font-weight: bold;
+        }
+        
+        .operation-display {
+            margin: 20px 0;
+            padding: 15px;
+            background: #ecf0f1;
+            border: 1px solid #bdc3c7;
+            border-radius: 0;
+            text-align: center;
+            min-height: 60px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .operation-equation {
+            font-size: 1.2rem;
+            margin-top: 10px;
+            color: #2c3e50;
+        }
+        
+        @media (max-width: 768px) {
+            .simulator {
+                grid-template-columns: 1fr;
+            }
+            
+            .registers {
+                flex-direction: column;
+            }
+            
+            .memory-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>CPU Interactive Web Page</h1>
+        </header>
+        
+        <div class="simulator">
+            <div class="panel">
+                <h2 class="panel-title">Memory</h2>
+                <div class="memory-grid" id="memoryGrid"></div>
+            </div>
+            
+            <div class="panel">
+                <h2 class="panel-title">CPU Components</h2>
+                <div class="cpu-components">
+                    <div class="registers">
+                        <div class="register" id="registerA">
+                            <div class="register-label">Register A</div>
+                            <div class="register-value">0</div>
+                        </div>
+                        <div class="register" id="registerB">
+                            <div class="register-label">Register B</div>
+                            <div class="register-value">0</div>
+                        </div>
+                        <div class="register" id="registerC">
+                            <div class="register-label">Register C</div>
+                            <div class="register-value">0</div>
+                        </div>
+                    </div>
+
+                    <div class="cpu-unit">
+                        <div class="unit-label">Addition / Subtraction</div>
+                        <div class="unit-value" id="aluOperation">IDLE</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="operation-display" id="operationDisplay">
+            <div>Current Operation</div>
+            <div class="operation-equation" id="operationEquation"></div>
+        </div>
+        
+        <div class="controls">
+            <button id="stepBtn">Step</button>
+            <button id="resetBtn">Reset</button>
+            <button id="runBtn">Run</button>
+        </div>
+        
+        <div class="status" id="status">
+            Ready to simulate CPU operations. Click Step to begin.
+        </div>
+        
+        <div class="instructions">
+            <h3>Program Instructions</h3>
+            <div class="instruction-list" id="instructionList"></div>
+        </div>
+    </div>
+
+    <script>
+        const memory = [
+            { address: 0, value: 10 },
+            { address: 1, value: 15 },
+            { address: 2, value: 20 },
+            { address: 3, value: 25 },
+            { address: 4, value: 30 },
+            { address: 5, value: 35 },
+            { address: 6, value: 40 },
+            { address: 7, value: 0 },
+            { address: 8, value: 50 },
+            { address: 9, value: 0 }
+        ];
+        
+        const cpuState = {
+            pc: 0,
+            ir: null,
+            a: 0,
+            b: 0,
+            c: 0,
+            running: false,
+            instructions: [
+                { type: 'LOAD', operand: 5, target: 'A' },
+                { type: 'LOAD', operand: 6, target: 'B' },
+                { type: 'ADD', target: 'C' },
+                { type: 'STORE', operand: 7, source: 'C' },
+                { type: 'LOAD', operand: 8, target: 'A' },
+                { type: 'SUB', target: 'C' },
+                { type: 'STORE', operand: 9, source: 'C' }
+            ]
+        };
+        
+        const memoryGrid = document.getElementById('memoryGrid');
+        const instructionList = document.getElementById('instructionList');
+        const registerA = document.getElementById('registerA').querySelector('.register-value');
+        const registerB = document.getElementById('registerB').querySelector('.register-value');
+        const registerC = document.getElementById('registerC').querySelector('.register-value');
+        const aluOperation = document.getElementById('aluOperation');
+        const operationEquation = document.getElementById('operationEquation');
+        const stepBtn = document.getElementById('stepBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const runBtn = document.getElementById('runBtn');
+        const status = document.getElementById('status');
+        
+        function initializeMemory() {
+            memoryGrid.innerHTML = '';
+            memory.forEach(cell => {
+                const cellElement = document.createElement('div');
+                cellElement.className = 'memory-cell';
+                cellElement.dataset.address = cell.address;
+                cellElement.innerHTML = `
+                    <div class="memory-address">Address ${cell.address}</div>
+                    <div class="memory-value">${cell.value}</div>
+                `;
+                memoryGrid.appendChild(cellElement);
+            });
+        }
+        
+        function initializeInstructions() {
+            instructionList.innerHTML = '';
+            cpuState.instructions.forEach((instruction, index) => {
+                const instructionElement = document.createElement('div');
+                instructionElement.className = 'instruction';
+                instructionElement.dataset.index = index;
+                
+                let text = `${instruction.type}`;
+                if (instruction.operand !== undefined) text += ` ${instruction.operand}`;
+                if (instruction.target) text += ` → ${instruction.target}`;
+                if (instruction.source) text += ` ← ${instruction.source}`;
+                
+                instructionElement.textContent = text;
+                instructionList.appendChild(instructionElement);
+            });
+        }
+        
+        function updateCPUDisplay() {
+            registerA.textContent = cpuState.a;
+            registerB.textContent = cpuState.b;
+            registerC.textContent = cpuState.c;
+            
+            document.querySelectorAll('.register').forEach(reg => reg.classList.remove('active'));
+            document.querySelectorAll('.instruction').forEach(inst => inst.classList.remove('active'));
+            
+            const instruction = cpuState.instructions[cpuState.pc];
+            if (instruction) {
+                const currentInstElement = document.querySelector(`.instruction[data-index="${cpuState.pc}"]`);
+                if (currentInstElement) currentInstElement.classList.add('active');
+                
+                if (instruction.target) {
+                    document.getElementById(`register${instruction.target}`).classList.add('active');
+                }
+                if (instruction.source) {
+                    document.getElementById(`register${instruction.source}`).classList.add('active');
+                }
+            }
+        }
+        
+        function executeStep() {
+            if (cpuState.pc >= cpuState.instructions.length) {
+                status.textContent = 'Program completed successfully!';
+                cpuState.running = false;
+                runBtn.textContent = 'Run';
+                return;
+            }
+            
+            const instruction = cpuState.instructions[cpuState.pc];
+            
+            if (instruction.operand !== undefined) {
+                const memoryCell = document.querySelector(`.memory-cell[data-address="${instruction.operand}"]`);
+                if (memoryCell) memoryCell.classList.add('active');
+            }
+            
+            switch (instruction.type) {
+                case 'LOAD':
+                    status.textContent = `Loading value from memory address ${instruction.operand} to register ${instruction.target}`;
+                    operationEquation.textContent = `Register ${instruction.target} = Memory[${instruction.operand}]`;
+                    
+                    setTimeout(() => {
+                        cpuState[instruction.target.toLowerCase()] = memory[instruction.operand].value;
+                        cpuState.pc++;
+                        updateCPUDisplay();
+                        status.textContent = `Loaded value ${memory[instruction.operand].value} to register ${instruction.target}`;
+                        
+                        if (instruction.operand !== undefined) {
+                            const memoryCell = document.querySelector(`.memory-cell[data-address="${instruction.operand}"]`);
+                            if (memoryCell) memoryCell.classList.remove('active');
+                        }
+                    }, 1000);
+                    break;
+                    
+                case 'STORE':
+                    status.textContent = `Storing value from register ${instruction.source} to memory address ${instruction.operand}`;
+                    operationEquation.textContent = `Memory[${instruction.operand}] = Register ${instruction.source}`;
+                    
+                    setTimeout(() => {
+                        memory[instruction.operand].value = cpuState[instruction.source.toLowerCase()];
+                        updateMemoryDisplay(instruction.operand);
+                        cpuState.pc++;
+                        updateCPUDisplay();
+                        status.textContent = `Stored value ${cpuState[instruction.source.toLowerCase()]} to memory address ${instruction.operand}`;
+                        
+                        if (instruction.operand !== undefined) {
+                            const memoryCell = document.querySelector(`.memory-cell[data-address="${instruction.operand}"]`);
+                            if (memoryCell) memoryCell.classList.remove('active');
+                        }
+                    }, 1000);
+                    break;
+                    
+                case 'ADD':
+                    status.textContent = `Adding values in registers A and B, storing result in register C`;
+                    operationEquation.textContent = `Register C = Register A + Register B`;
+                    aluOperation.textContent = 'A + B';
+                    
+                    setTimeout(() => {
+                        cpuState.c = cpuState.a + cpuState.b;
+                        cpuState.pc++;
+                        updateCPUDisplay();
+                        aluOperation.textContent = 'IDLE';
+                        status.textContent = `Added A and B, result ${cpuState.c} stored in C`;
+                        operationEquation.textContent = `${cpuState.a} + ${cpuState.b} = ${cpuState.c}`;
+                    }, 1500);
+                    break;
+                    
+                case 'SUB':
+                    status.textContent = `Subtracting value in register B from register A, storing result in register C`;
+                    operationEquation.textContent = `Register C = Register A - Register B`;
+                    aluOperation.textContent = 'A - B';
+                    
+                    setTimeout(() => {
+                        cpuState.c = cpuState.a - cpuState.b;
+                        cpuState.pc++;
+                        updateCPUDisplay();
+                        aluOperation.textContent = 'IDLE';
+                        status.textContent = `Subtracted B from A, result ${cpuState.c} stored in C`;
+                        operationEquation.textContent = `${cpuState.a} - ${cpuState.b} = ${cpuState.c}`;
+                    }, 1500);
+                    break;
+            }
+        }
+        
+        function updateMemoryDisplay(address) {
+            const cell = document.querySelector(`.memory-cell[data-address="${address}"]`);
+            if (cell) {
+                cell.querySelector('.memory-value').textContent = memory[address].value;
+            }
+        }
+        
+        function resetSimulation() {
+            cpuState.pc = 0;
+            cpuState.a = 0;
+            cpuState.b = 0;
+            cpuState.c = 0;
+            cpuState.running = false;
+            
+            memory[0].value = 10;
+            memory[1].value = 15;
+            memory[2].value = 20;
+            memory[3].value = 25;
+            memory[4].value = 30;
+            memory[5].value = 35;
+            memory[6].value = 40;
+            memory[7].value = 0;
+            memory[8].value = 50;
+            memory[9].value = 0;
+            
+            initializeMemory();
+            updateCPUDisplay();
+            aluOperation.textContent = 'IDLE';
+            operationEquation.textContent = '';
+            status.textContent = 'Simulation reset. Click Step to begin.';
+            runBtn.textContent = 'Run';
+            
+            document.querySelectorAll('.memory-cell, .register, .instruction').forEach(el => {
+                el.classList.remove('active');
+            });
+        }
+        
+        function runSimulation() {
+            if (cpuState.running) {
+                cpuState.running = false;
+                runBtn.textContent = 'Run';
+                status.textContent = 'Simulation paused';
+                return;
+            }
+            
+            cpuState.running = true;
+            runBtn.textContent = 'Pause';
+            
+            function runStep() {
+                if (cpuState.running && cpuState.pc < cpuState.instructions.length) {
+                    executeStep();
+                    setTimeout(runStep, 2500);
+                } else {
+                    cpuState.running = false;
+                    runBtn.textContent = 'Run';
+                }
+            }
+            
+            runStep();
+        }
+        
+        stepBtn.addEventListener('click', () => {
+            if (!cpuState.running) executeStep();
+        });
+        
+        resetBtn.addEventListener('click', resetSimulation);
+        runBtn.addEventListener('click', runSimulation);
+        
+        initializeMemory();
+        initializeInstructions();
+        updateCPUDisplay();
+    </script>
+</body>
+</html>
